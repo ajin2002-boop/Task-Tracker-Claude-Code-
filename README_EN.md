@@ -91,6 +91,10 @@ Window size, color theme, etc. are defined in the config section at the top of `
 - `COLOR_BG` / `COLOR_HEADER` / `COLOR_ACCENT` etc.: colors
 - `POLL_INTERVAL_MS`: file-watching interval (default 1000ms)
 
+## Roadmap
+
+- **Multi-session isolation** (planned): All sessions currently share `~/.claude-tasks/tasks.json`, so concurrent sessions overwrite each other. Planning to isolate by project directory (the agent knows its own cwd) or by session. See [GitHub Issue #1](https://github.com/ajin2002-boop/Task-Tracker-Claude-Code-/issues/1).
+
 ## License
 
 MIT

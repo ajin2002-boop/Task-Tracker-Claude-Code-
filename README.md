@@ -93,6 +93,10 @@ Windows 上也可以直接双击 `启动悬浮窗.bat`（用 `pythonw` 无窗口
 - `COLOR_BG` / `COLOR_HEADER` / `COLOR_ACCENT` 等：配色
 - `POLL_INTERVAL_MS`：文件监听频率（默认 1000ms）
 
+## 后续改进（Roadmap）
+
+- **多会话隔离**（待实现）：当前所有会话共用 `~/.claude-tasks/tasks.json`，多会话同时工作时会互相覆盖。计划按项目目录（agent 已知自己的工作目录）或按会话隔离。详见 [GitHub Issue #1](https://github.com/ajin2002-boop/Task-Tracker-Claude-Code-/issues/1)。
+
 ## License
 
 MIT
