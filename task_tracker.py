@@ -23,7 +23,7 @@ import pystray
 from PIL import Image, ImageDraw, ImageTk
 
 # ---------- 配置 ----------
-APP_VERSION = "0.1.0"
+APP_VERSION = "0.2.0"
 TASKS_FILE = Path.home() / ".claude-tasks" / "tasks.json"
 POLL_INTERVAL_MS = 1000
 WINDOW_W = 380
@@ -121,6 +121,10 @@ INTEGRATION_TEXT = f"""# 桌面任务进度表（Task Tracker）
 - 保持 JSON 合法：写入前自检，确保无尾逗号、无语法错误。
 - 不要写与任务无关的内容进这个文件，它只放任务清单。
 - 文件变更时悬浮窗会在 1 秒内自动刷新，无需其他操作。
+
+## 已知限制 / 后续改进
+
+- **多会话隔离**（待实现）：当前所有会话共用 `~/.claude-tasks/tasks.json`，多会话同时工作时会互相覆盖。计划按项目目录（agent 已知自己的工作目录）或按会话隔离。详见 GitHub Issue #1。
 
 ## 示例场景
 

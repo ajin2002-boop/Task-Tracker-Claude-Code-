@@ -6,7 +6,7 @@ An always-on-top desktop widget that shows your task list and progress in real t
 
 ## Download
 
-[⬇ Download TaskTracker.exe (v0.1.0)](https://github.com/ajin2002-boop/Task-Tracker-Claude-Code-/releases/download/v0.1.0/TaskTracker.exe)
+[⬇ Download TaskTracker.exe (v0.2.0)](https://github.com/ajin2002-boop/Task-Tracker-Claude-Code-/releases/download/v0.2.0/TaskTracker.exe)
 
 Windows: download the exe and double-click to run. **No Python installation required.**
 

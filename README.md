@@ -6,7 +6,7 @@
 
 ## 下载
 
-[⬇ 下载 TaskTracker.exe (v0.1.0)](https://github.com/ajin2002-boop/Task-Tracker-Claude-Code-/releases/download/v0.1.0/TaskTracker.exe)
+[⬇ 下载 TaskTracker.exe (v0.2.0)](https://github.com/ajin2002-boop/Task-Tracker-Claude-Code-/releases/download/v0.2.0/TaskTracker.exe)
 
 Windows 直接下载 exe 双击运行，**无需安装 Python**。
 
