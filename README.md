@@ -4,6 +4,12 @@
 
 一个常驻桌面的任务进度悬浮窗。Claude Code 在长对话中会把任务清单写入一个 JSON 文件，这个悬浮窗实时显示清单和完成进度，让你**一眼看到最初的任务全貌，不再因为聊深了而忘记做到哪一步**。
 
+## 下载
+
+[⬇ 下载 TaskTracker.exe (v0.1.0)](https://github.com/ajin2002-boop/Task-Tracker-Claude-Code-/releases/download/v0.1.0/TaskTracker.exe)
+
+Windows 直接下载 exe 双击运行，**无需安装 Python**。
+
 ## 解决的问题
 
 用 Claude Code 做多步骤任务时，任务列表会随对话滚动消失，一旦在某一步上聊得久，就容易丢失整体任务轨迹，还得回头问 agent"我们做到哪了"，浪费 token。

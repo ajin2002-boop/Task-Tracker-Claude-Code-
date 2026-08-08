@@ -4,6 +4,12 @@
 
 An always-on-top desktop widget that shows your task list and progress in real time. Claude Code writes the task list to a JSON file during long conversations, and this widget keeps the full picture on your screen — so you never lose track of what's left to do, even after going deep on one step.
 
+## Download
+
+[⬇ Download TaskTracker.exe (v0.1.0)](https://github.com/ajin2002-boop/Task-Tracker-Claude-Code-/releases/download/v0.1.0/TaskTracker.exe)
+
+Windows: download the exe and double-click to run. **No Python installation required.**
+
 ## The Problem It Solves
 
 When working with Claude Code on multi-step tasks, the task list scrolls out of view as the conversation grows. Once you spend a long time on a single step, it's easy to lose the overall task trajectory, forcing you to ask the agent "where are we again?" — wasting tokens.
