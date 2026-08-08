@@ -13,7 +13,6 @@ import ctypes
 import json
 import sys
 import threading
-import time
 from pathlib import Path
 
 import tkinter as tk
@@ -24,6 +23,7 @@ import pystray
 from PIL import Image, ImageDraw, ImageTk
 
 # ---------- 配置 ----------
+APP_VERSION = "0.1.0"
 TASKS_FILE = Path.home() / ".claude-tasks" / "tasks.json"
 POLL_INTERVAL_MS = 1000
 WINDOW_W = 380
@@ -64,6 +64,94 @@ ACCENT      = "#22c55e"
 ACCENT2     = "#06b6d4"
 PARTIAL     = "#f59e0b"
 DANGER      = "#ef4444"
+
+
+# ---------- 集成自举（首次运行自动配置 Claude Code） ----------
+INTEGRATION_MARKER = "<!-- Task Tracker integration -->"
+
+INTEGRATION_TEXT = f"""# 桌面任务进度表（Task Tracker）
+
+{INTEGRATION_MARKER}
+用户的桌面上常驻一个任务进度悬浮窗，它实时读取 `~/.claude-tasks/tasks.json`。
+**每次开始一个多步骤任务时，必须把任务清单写入这个文件，并在过程中持续维护。**
+
+## 任务文件格式
+
+```json
+{{
+  "project": "当前任务名称",
+  "updated_at": "2026-08-08T12:00:00+08:00",
+  "tasks": [
+    {{
+      "id": "1",
+      "title": "主任务标题",
+      "done": false,
+      "subtasks": [
+        {{ "id": "1-1", "title": "子任务标题", "done": false }}
+      ]
+    }}
+  ]
+}}
+```
+
+- `updated_at`：每次写入时更新为当前时间（ISO 8601 格式，保留秒）。
+- `done`：布尔值。主任务没有子任务时用主任务的 `done`；有子任务时子任务各自标记，主任务通常保持 `false`。
+- 没有子任务时，`subtasks` 可为空数组 `[]`。
+
+## 何时更新（必须遵守）
+
+1. **开始新任务时**：动手前先把完整任务清单写入文件，让用户一眼看到全貌。
+2. **完成一项时**：立即把对应 `done` 改为 `true` 并更新 `updated_at`。
+3. **扩展出子任务时**：聊天过程中如果某步展开成多个小步，把它作为 `subtasks` 加到对应主任务下。
+4. **任务清单变化时**（新增/删除/改标题）：同步更新文件。
+5. **写入失败时**：如果目录不存在，先 `mkdir -p` 创建，再写入。
+
+## 使用原则
+
+- 用 `Write` 工具覆盖写入整个 `tasks.json`，不要用追加。
+- 保持 JSON 合法：写入前自检，确保无尾逗号、无语法错误。
+- 不要写与任务无关的内容进这个文件，它只放任务清单。
+- 文件变更时悬浮窗会在 1 秒内自动刷新，无需其他操作。
+
+## 示例场景
+
+用户说"帮我做一个网站的登录功能"，你应当立刻写入：
+1. 搭建项目骨架
+2. 设计数据库表
+3. 实现注册/登录接口
+4. 前端登录表单
+5. 测试完整流程
+
+之后每完成一步就改一个 `done`，中途发现"登录接口"需要拆成"邮箱验证"和"密码重置"两个子任务，就加到它的 `subtasks` 里。
+"""
+
+
+def setup_integration():
+    """首次运行时自动配置 Claude Code 集成，用户无需手动操作。"""
+    # 1. 确保任务目录和数据文件存在
+    TASKS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    if not TASKS_FILE.exists():
+        TASKS_FILE.write_text(
+            json.dumps({"project": "Claude Code 任务", "updated_at": "",
+                        "tasks": []}, ensure_ascii=False, indent=2),
+            encoding="utf-8")
+
+    # 2. 确保全局 CLAUDE.md 里有集成说明（自动写入/追加，带去重）
+    try:
+        claude_dir = Path.home() / ".claude"
+        claude_dir.mkdir(parents=True, exist_ok=True)
+        claude_md = claude_dir / "CLAUDE.md"
+        if claude_md.exists():
+            content = claude_md.read_text(encoding="utf-8")
+            # 已有集成说明（含标记或旧版标题）则跳过，避免重复
+            if INTEGRATION_MARKER in content or "桌面任务进度表" in content:
+                return
+            with open(claude_md, "a", encoding="utf-8") as f:
+                f.write("\n\n" + INTEGRATION_TEXT)
+        else:
+            claude_md.write_text(INTEGRATION_TEXT, encoding="utf-8")
+    except Exception:
+        pass
 
 
 def _img_box(size, state, accent=ACCENT):
@@ -224,8 +312,7 @@ class TaskTracker:
         footer = tk.Frame(self.root, bg=SURFACE, height=24)
         footer.pack(fill="x")
         footer.pack_propagate(False)
-        self.updated_var = tk.StringVar(value="--")
-        tk.Label(footer, textvariable=self.updated_var, font=self.f_small,
+        tk.Label(footer, text="v" + APP_VERSION, font=self.f_small,
                  fg=DIM, bg=SURFACE).pack(side="left", padx=12)
 
         grip = tk.Label(footer, text="⤡", font=self.f_small, fg=DIM,
@@ -377,14 +464,6 @@ class TaskTracker:
 
         self.project_var.set(data.get("project") or "Claude Code 任务")
 
-        updated = data.get("updated_at", "")
-        if updated:
-            try:
-                t = time.strptime(updated[:19], "%Y-%m-%dT%H:%M:%S")
-                self.updated_var.set("更新于 " + time.strftime("%H:%M:%S", t))
-            except ValueError:
-                self.updated_var.set("")
-
         tasks = data["tasks"]
         total = 0
         done = 0
@@ -477,6 +556,7 @@ class TaskTracker:
 
 def main():
     _enable_dpi_awareness()  # 必须在创建窗口之前调用
+    setup_integration()      # 自动配置 Claude Code 集成（幂等，可重复执行）
     root = tk.Tk()
     app = TaskTracker(root)
     root._tray_app = app

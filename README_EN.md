@@ -31,15 +31,17 @@ The desktop widget refreshes within 1 second, showing the list + progress
 Claude completes a step → updates done → the widget checks it off automatically
 ```
 
-- **Frontend**: Python + tkinter (dark theme, always-on-top, resizable, auto-refresh via 1s polling)
+- **Frontend**: Python + tkinter (light theme, always-on-top, resizable, auto-refresh via 1s polling)
 - **Data source**: `~/.claude-tasks/tasks.json` (plain JSON, human-readable and editable)
-- **Integration**: The `CLAUDE.md` instructions make Claude Code maintain this file automatically
+- **Integration**: Auto-configured on first run — no manual steps needed
 
 ## Quick Start
 
-### 1. Run the widget
+### 1. Download and run
 
-Requires Python 3.7+ (with tkinter included):
+[⬇ Download TaskTracker.exe](https://github.com/ajin2002-boop/Task-Tracker-Claude-Code-/releases/download/v0.1.0/TaskTracker.exe) and double-click it. **No Python installation or manual configuration required.**
+
+To run from source (development):
 
 ```bash
 python task_tracker.py
@@ -47,10 +49,13 @@ python task_tracker.py
 
 On Windows you can also double-click `启动悬浮窗.bat` (runs in the background with `pythonw`).
 
-### 2. Let Claude Code maintain the task list automatically
+### 2. Automatic Claude Code integration
 
-Copy the contents of `CLAUDE.md` to your **global** config `~/.claude/CLAUDE.md` (or a project's `CLAUDE.md`).
-From then on, Claude will write the task list before starting a multi-step task and keep it updated as it works.
+**On first launch, the app automatically (invisible to you):**
+- Creates the `~/.claude-tasks/` directory and `tasks.json`
+- Checks `~/.claude/CLAUDE.md` and writes/appends the task-maintenance instructions
+
+From then on, Claude writes the task list before starting a multi-step task and keeps it updated as it works — **you don't have to do anything**.
 
 ### 3. Example
 

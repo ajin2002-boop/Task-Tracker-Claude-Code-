@@ -31,15 +31,17 @@ Claude 按 CLAUDE.md 指令，写任务清单到 ~/.claude-tasks/tasks.json
 Claude 完成一步 → 改 done → 悬浮窗自动打勾
 ```
 
-- **前端**：Python + tkinter（深色主题，置顶，可缩放，1 秒轮询自动刷新）
+- **前端**：Python + tkinter（浅色主题，置顶，可缩放，1 秒轮询自动刷新）
 - **数据源**：`~/.claude-tasks/tasks.json`（纯 JSON，人可读可改）
-- **集成**：`CLAUDE.md` 里的指令让 Claude Code 自动维护这个文件
+- **集成**：软件首次运行时**自动配置**，无需手动操作
 
 ## 快速开始
 
-### 1. 运行悬浮窗
+### 1. 下载并运行
 
-需要 Python 3.7+（自带 tkinter）：
+[⬇ 下载 TaskTracker.exe](https://github.com/ajin2002-boop/Task-Tracker-Claude-Code-/releases/download/v0.1.0/TaskTracker.exe)，双击即用，**无需安装 Python、无需任何手动配置**。
+
+开发模式跑源码：
 
 ```bash
 python task_tracker.py
@@ -47,10 +49,13 @@ python task_tracker.py
 
 Windows 上也可以直接双击 `启动悬浮窗.bat`（用 `pythonw` 无窗口后台运行）。
 
-### 2. 让 Claude Code 自动维护任务清单
+### 2. 自动完成与 Claude Code 集成
 
-把 `CLAUDE.md` 的内容复制到你的**全局**配置 `~/.claude/CLAUDE.md`（或项目的 `CLAUDE.md`）。
-之后每次开始多步骤任务，Claude 就会自动先写任务清单，并在过程中持续更新。
+**第一次运行时，软件会自动完成这些配置（用户无感）：**
+- 创建 `~/.claude-tasks/` 目录和 `tasks.json`
+- 检查 `~/.claude/CLAUDE.md`，自动写入/追加"任务维护说明"
+
+之后每次开始多步骤任务，Claude 就会自动先写任务清单，并在过程中持续更新——**你什么都不用做**。
 
 ### 3. 示例
 
