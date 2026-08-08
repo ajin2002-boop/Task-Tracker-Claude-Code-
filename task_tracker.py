@@ -64,6 +64,7 @@ ACCENT      = "#22c55e"
 ACCENT2     = "#06b6d4"
 PARTIAL     = "#f59e0b"
 DANGER      = "#ef4444"
+IN_PROGRESS = "#2563eb"
 
 
 # ---------- 集成自举（首次运行自动配置 Claude Code） ----------
@@ -85,7 +86,7 @@ INTEGRATION_TEXT = f"""# 桌面任务进度表（Task Tracker）
     {{
       "id": "1",
       "title": "主任务标题",
-      "done": false,
+      "status": "pending",
       "subtasks": [
         {{ "id": "1-1", "title": "子任务标题", "done": false }}
       ]
@@ -95,7 +96,8 @@ INTEGRATION_TEXT = f"""# 桌面任务进度表（Task Tracker）
 ```
 
 - `updated_at`：每次写入时更新为当前时间（ISO 8601 格式，保留秒）。
-- `done`：布尔值。主任务没有子任务时用主任务的 `done`；有子任务时子任务各自标记，主任务通常保持 `false`。
+- `status`（主任务用）：取值为 `pending`（待办）/ `in_progress`（进行中）/ `completed`（完成）/ `cancelled`（取消）/ `paused`（暂停）。
+- `done`（子任务用）：布尔值，仅子任务使用。
 - 没有子任务时，`subtasks` 可为空数组 `[]`。
 
 ## 何时更新（只在关键节点维护，不要频繁写）
@@ -168,7 +170,7 @@ def _img_box(size, state, accent=ACCENT):
     img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
     m = max(2, size // 10)
-    if state == "done":
+    if state in ("done", "completed"):
         d.rounded_rectangle([m, m, size - m - 1, size - m - 1],
                             radius=r, fill=accent)
         # 对勾
@@ -181,10 +183,35 @@ def _img_box(size, state, accent=ACCENT):
         # 短横线
         d.line([size*0.30, size*0.50, size*0.70, size*0.50],
                fill=PARTIAL, width=max(2, int(size * 0.14)))
-    else:
+    elif state == "cancelled":
+        d.rounded_rectangle([m, m, size - m - 1, size - m - 1],
+                            radius=r, outline=DANGER, width=max(2, size // 9))
+        cw = max(2, int(size * 0.12))
+        d.line([size*0.30, size*0.30, size*0.70, size*0.70], fill=DANGER, width=cw)
+        d.line([size*0.70, size*0.30, size*0.30, size*0.70], fill=DANGER, width=cw)
+    elif state == "paused":
+        d.rounded_rectangle([m, m, size - m - 1, size - m - 1],
+                            radius=r, outline=PARTIAL, width=max(2, size // 9))
+        bw = max(2, int(size * 0.10))
+        x1, x2 = size * 0.36, size * 0.64
+        d.rectangle([x1-bw/2, size*0.30, x1+bw/2, size*0.70], fill=PARTIAL)
+        d.rectangle([x2-bw/2, size*0.30, x2+bw/2, size*0.70], fill=PARTIAL)
+    elif state == "in_progress":
+        d.rounded_rectangle([m, m, size - m - 1, size - m - 1],
+                            radius=r, outline=IN_PROGRESS, width=max(2, size // 9))
+        d.ellipse([size*0.35, size*0.35, size*0.65, size*0.65], fill=IN_PROGRESS)
+    else:  # pending / empty
         d.rounded_rectangle([m, m, size - m - 1, size - m - 1],
                             radius=r, outline=DIM, width=max(2, size // 9))
     return ImageTk.PhotoImage(img)
+
+
+def task_status(task):
+    """解析任务状态，兼容旧版 done 布尔值"""
+    s = task.get("status")
+    if s in ("pending", "in_progress", "completed", "cancelled", "paused"):
+        return s
+    return "completed" if task.get("done") else "pending"
 
 
 class TaskTracker:
@@ -206,16 +233,22 @@ class TaskTracker:
         self.f_project = tkfont.Font(family="Segoe UI", size=14, weight="bold")
         self.f_meta    = tkfont.Font(family="Segoe UI", size=9)
         self.f_task    = tkfont.Font(family="Segoe UI", size=11)
+        self.f_task_os = tkfont.Font(family="Segoe UI", size=11, overstrike=1)
         self.f_sub     = tkfont.Font(family="Segoe UI", size=10)
         self.f_small   = tkfont.Font(family="Segoe UI", size=8)
 
-        # 预生成图标图片
-        self.img_box_done    = _img_box(22, "done")
-        self.img_box_partial = _img_box(22, "partial")
-        self.img_box_empty   = _img_box(22, "empty")
-        self.img_sub_done    = _img_box(16, "done", accent=ACCENT2)
-        self.img_sub_empty   = _img_box(16, "empty")
-        self._imgs = [self.img_box_done, self.img_box_partial, self.img_box_empty,
+        # 预生成图标图片（各状态）
+        self.img_box_pending      = _img_box(22, "pending")
+        self.img_box_in_progress  = _img_box(22, "in_progress")
+        self.img_box_completed    = _img_box(22, "completed")
+        self.img_box_cancelled    = _img_box(22, "cancelled")
+        self.img_box_paused       = _img_box(22, "paused")
+        self.img_box_partial      = _img_box(22, "partial")
+        self.img_sub_done         = _img_box(16, "done", accent=ACCENT2)
+        self.img_sub_empty        = _img_box(16, "pending")
+        self._imgs = [self.img_box_pending, self.img_box_in_progress,
+                      self.img_box_completed, self.img_box_cancelled,
+                      self.img_box_paused, self.img_box_partial,
                       self.img_sub_done, self.img_sub_empty]
 
         self._last_sig = None
@@ -475,13 +508,18 @@ class TaskTracker:
         total = 0
         done = 0
         for t in tasks:
+            st = task_status(t)
+            if st == "cancelled":
+                continue  # 取消的任务不计入进度
             subs = t.get("subtasks") or []
-            if subs:
+            if st == "completed":
+                total += len(subs) if subs else 1
+                done += len(subs) if subs else 1
+            elif subs:
                 total += len(subs)
                 done += sum(1 for s in subs if s.get("done"))
             else:
                 total += 1
-                done += 1 if t.get("done") else 0
 
         self.progress_var.set(f"{done}/{total}")
         frac = (done / total) if total else 0
@@ -511,16 +549,28 @@ class TaskTracker:
 
     def _render_task(self, task):
         subs = task.get("subtasks") or []
-        task_done = bool(task.get("done"))
+        status = task_status(task)
         sub_done = sum(1 for s in subs if s.get("done"))
 
-        # 复选框状态
-        if task_done:
-            box_img = self.img_box_done
+        # 复选框图
+        if status == "completed":
+            box_img = self.img_box_completed
+        elif status == "cancelled":
+            box_img = self.img_box_cancelled
+        elif status == "paused":
+            box_img = self.img_box_paused
+        elif status == "in_progress":
+            box_img = self.img_box_in_progress
         elif subs and sub_done:
             box_img = self.img_box_partial
         else:
-            box_img = self.img_box_empty
+            box_img = self.img_box_pending
+
+        # 状态标签
+        tag = {"cancelled": "已取消", "paused": "已暂停",
+               "in_progress": "进行中"}.get(status)
+        tag_color = {"cancelled": DANGER, "paused": PARTIAL,
+                     "in_progress": IN_PROGRESS}.get(status)
 
         # 主任务行
         row = tk.Frame(self.tasks_frame, bg=BG)
@@ -533,11 +583,21 @@ class TaskTracker:
         box.bind("<Enter>", lambda e, r=row: r.configure(bg=SURFACE_HOV))
         box.bind("<Leave>", lambda e, r=row: r.configure(bg=BG))
 
-        if task_done:
-            fg = DIM
+        if tag:
+            tk.Label(row, text=tag, font=self.f_small, fg=tag_color,
+                     bg=BG).pack(side="right")
+
+        if status == "completed":
+            fg, font = DIM, self.f_task_os
+        elif status == "cancelled":
+            fg, font = DIM, self.f_task_os
+        elif status == "paused":
+            fg, font = PARTIAL, self.f_task
+        elif status == "in_progress":
+            fg, font = IN_PROGRESS, self.f_task
         else:
-            fg = TEXT
-        title = tk.Label(row, text=task.get("title", ""), font=self.f_task,
+            fg, font = TEXT, self.f_task
+        title = tk.Label(row, text=task.get("title", ""), font=font,
                          fg=fg, bg=BG, justify="left", anchor="w", wraplength=290)
         title.pack(side="left", fill="x", expand=True)
         title.bind("<Enter>", lambda e, r=row: r.configure(bg=SURFACE_HOV))
@@ -545,9 +605,9 @@ class TaskTracker:
 
         # 子任务
         for s in subs:
-            self._render_subtask(s, task_done)
+            self._render_subtask(s, status)
 
-    def _render_subtask(self, sub, parent_done):
+    def _render_subtask(self, sub, parent_status):
         row = tk.Frame(self.tasks_frame, bg=BG)
         row.pack(fill="x", padx=(36, 14), pady=1)
 
@@ -555,7 +615,12 @@ class TaskTracker:
         box_img = self.img_sub_done if s_done else self.img_sub_empty
         tk.Label(row, image=box_img, bg=BG).pack(side="left", padx=(2, 8))
 
-        fg = DIM if (s_done or parent_done) else MUTED
+        if parent_status in ("completed", "cancelled"):
+            fg = DIM  # 父任务完成/取消 → 子任务置灰
+        elif s_done:
+            fg = DIM
+        else:
+            fg = MUTED
         tk.Label(row, text=sub.get("title", ""), font=self.f_sub, fg=fg,
                  bg=BG, justify="left", anchor="w",
                  wraplength=270).pack(side="left", fill="x", expand=True)

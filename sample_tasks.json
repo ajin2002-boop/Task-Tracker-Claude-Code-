@@ -1,11 +1,11 @@
 {
   "project": "示例项目",
-  "updated_at": "2026-08-07T12:00:00+08:00",
+  "updated_at": "2026-08-08T12:00:00+08:00",
   "tasks": [
     {
       "id": "1",
-      "title": "主任务 A",
-      "done": true,
+      "title": "已完成主任务",
+      "status": "completed",
       "subtasks": [
         { "id": "1-1", "title": "子任务 A1", "done": true },
         { "id": "1-2", "title": "子任务 A2", "done": true }
@@ -13,8 +13,8 @@
     },
     {
       "id": "2",
-      "title": "主任务 B（进行中）",
-      "done": false,
+      "title": "进行中主任务",
+      "status": "in_progress",
       "subtasks": [
         { "id": "2-1", "title": "子任务 B1", "done": true },
         { "id": "2-2", "title": "子任务 B2", "done": false }
@@ -22,8 +22,20 @@
     },
     {
       "id": "3",
-      "title": "主任务 C（未开始）",
-      "done": false,
+      "title": "已暂停任务",
+      "status": "paused",
+      "subtasks": []
+    },
+    {
+      "id": "4",
+      "title": "已取消任务",
+      "status": "cancelled",
+      "subtasks": []
+    },
+    {
+      "id": "5",
+      "title": "待办任务",
+      "status": "pending",
       "subtasks": []
     }
   ]

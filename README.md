@@ -66,12 +66,12 @@ Windows 上也可以直接双击 `启动悬浮窗.bat`（用 `pythonw` 无窗口
 ```json
 {
   "project": "当前任务名称",
-  "updated_at": "2026-08-07T12:40:00+08:00",
+  "updated_at": "2026-08-08T12:40:00+08:00",
   "tasks": [
     {
       "id": "1",
       "title": "主任务标题",
-      "done": false,
+      "status": "pending",
       "subtasks": [
         { "id": "1-1", "title": "子任务标题", "done": false }
       ]
@@ -80,7 +80,9 @@ Windows 上也可以直接双击 `启动悬浮窗.bat`（用 `pythonw` 无窗口
 }
 ```
 
-- `done`：布尔值。主任务没有子任务时用主任务的 `done`；有子任务时子任务各自标记。
+- `status`（主任务）：`pending` 待办 / `in_progress` 进行中 / `completed` 完成 / `cancelled` 取消 / `paused` 暂停
+- `done`（子任务）：布尔值
+- 悬浮窗会用不同颜色和图标区分这 5 种状态
 - `updated_at`：每次写入更新为当前时间（ISO 8601）。
 - 悬浮窗在文件变更后 1 秒内自动刷新。
 

@@ -66,12 +66,12 @@ From then on, Claude writes the task list before starting a multi-step task and 
 ```json
 {
   "project": "Current task name",
-  "updated_at": "2026-08-07T12:40:00+08:00",
+  "updated_at": "2026-08-08T12:40:00+08:00",
   "tasks": [
     {
       "id": "1",
       "title": "Main task title",
-      "done": false,
+      "status": "pending",
       "subtasks": [
         { "id": "1-1", "title": "Subtask title", "done": false }
       ]
@@ -80,9 +80,9 @@ From then on, Claude writes the task list before starting a multi-step task and 
 }
 ```
 
-- `done`: boolean. Use the main task's `done` when it has no subtasks; mark each subtask individually when it does.
-- `updated_at`: update to the current time (ISO 8601) on every write.
-- The widget auto-refreshes within 1 second of a file change.
+- `status` (main task): `pending` / `in_progress` / `completed` / `cancelled` / `paused`
+- `done` (subtask): boolean
+- The widget renders these 5 statuses with distinct colors and icons
 
 ## Customization
 
